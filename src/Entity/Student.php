@@ -2,8 +2,6 @@
 
 namespace Alura\Doctrine\Entity;
 
-
-use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\Table;
 use Doctrine\ORM\Mapping\GeneratedValue;
@@ -25,7 +23,7 @@ class Student
      */
     protected int $id;
     /**
-     * @ORM\Column(type="string", lenght=100)
+     * @Column(type="string")
      */
     private string $name;
 
