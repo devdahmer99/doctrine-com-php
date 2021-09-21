@@ -4,11 +4,18 @@ declare(strict_types=1);
 
 namespace Doctrine\Migrations\Tools\Console\Command;
 
+use Doctrine\Migrations\Tools\Console\Exception\InvalidOptionUsage;
 use Doctrine\Migrations\Tools\Console\Exception\SchemaDumpRequiresNoMigrations;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+
+use function assert;
+use function class_exists;
 use function count;
+use function is_array;
+use function is_bool;
+use function is_string;
 use function sprintf;
 
 /**
@@ -19,12 +26,14 @@ use function sprintf;
  */
 class DumpSchemaCommand extends AbstractCommand
 {
-    protected function configure() : void
+    /** @var string */
+    protected static $defaultName = 'migrations:dump-schema';
+
+    protected function configure(): void
     {
         parent::configure();
 
         $this
-            ->setName('migrations:dump-schema')
             ->setAliases(['dump-schema'])
             ->setDescription('Dump the schema for your database to a migration.')
             ->setHelp(<<<EOT
@@ -52,7 +61,7 @@ EOT
                 null,
                 InputOption::VALUE_OPTIONAL,
                 'Max line length of unformatted lines.',
-                120
+                '120'
             );
     }
 
@@ -62,15 +71,25 @@ EOT
     public function execute(
         InputInterface $input,
         OutputInterface $output
-    ) : ?int {
+    ): ?int {
         $formatted  = (bool) $input->getOption('formatted');
-        $lineLength = (int) $input->getOption('line-length');
+        $lineLength = $input->getOption('line-length');
+        assert(! is_array($lineLength) && ! is_bool($lineLength));
+        $lineLength = (int) $lineLength;
 
         $schemaDumper = $this->dependencyFactory->getSchemaDumper();
         $versions     = $this->migrationRepository->getVersions();
 
         if (count($versions) > 0) {
             throw SchemaDumpRequiresNoMigrations::new();
+        }
+
+        if ($formatted) {
+            if (! class_exists('SqlFormatter')) {
+                throw InvalidOptionUsage::new(
+                    'The "--formatted" option can only be used if the sql formatter is installed. Please run "composer require jdorn/sql-formatter".'
+                );
+            }
         }
 
         $versionNumber = $this->configuration->generateVersionNumber();
@@ -82,6 +101,7 @@ EOT
         );
 
         $editorCommand = $input->getOption('editor-cmd');
+        assert(is_string($editorCommand) || $editorCommand === null);
 
         if ($editorCommand !== null) {
             $this->procOpen($editorCommand, $path);

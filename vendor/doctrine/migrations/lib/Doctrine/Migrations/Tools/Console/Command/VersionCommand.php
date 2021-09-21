@@ -12,6 +12,9 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+
+use function assert;
+use function is_string;
 use function sprintf;
 
 /**
@@ -19,13 +22,15 @@ use function sprintf;
  */
 class VersionCommand extends AbstractCommand
 {
+    /** @var string */
+    protected static $defaultName = 'migrations:version';
+
     /** @var bool */
     private $markMigrated;
 
-    protected function configure() : void
+    protected function configure(): void
     {
         $this
-            ->setName('migrations:version')
             ->setAliases(['version'])
             ->setDescription('Manually add and delete migration versions from the version table.')
             ->addArgument(
@@ -95,7 +100,7 @@ EOT
     /**
      * @throws InvalidOptionUsage
      */
-    public function execute(InputInterface $input, OutputInterface $output) : ?int
+    public function execute(InputInterface $input, OutputInterface $output): ?int
     {
         if ($input->getOption('add') === false && $input->getOption('delete') === false) {
             throw InvalidOptionUsage::new('You must specify whether you want to --add or --delete the specified version.');
@@ -123,9 +128,11 @@ EOT
     /**
      * @throws InvalidOptionUsage
      */
-    private function markVersions(InputInterface $input, OutputInterface $output) : void
+    private function markVersions(InputInterface $input, OutputInterface $output): void
     {
         $affectedVersion = $input->getArgument('version');
+        assert(is_string($affectedVersion) || $affectedVersion === null);
+
         $allOption       = $input->getOption('all');
         $rangeFromOption = $input->getOption('range-from');
         $rangeToOption   = $input->getOption('range-to');
@@ -146,7 +153,7 @@ EOT
             $availableVersions = $this->migrationRepository->getAvailableVersions();
 
             foreach ($availableVersions as $version) {
-                $this->mark($output, $version, true);
+                $this->mark($input, $output, $version, true);
             }
         } elseif ($rangeFromOption !== null && $rangeToOption !== null) {
             $availableVersions = $this->migrationRepository->getAvailableVersions();
@@ -156,10 +163,10 @@ EOT
                     continue;
                 }
 
-                $this->mark($output, $version, true);
+                $this->mark($input, $output, $version, true);
             }
         } else {
-            $this->mark($output, $affectedVersion);
+            $this->mark($input, $output, (string) $affectedVersion);
         }
     }
 
@@ -168,10 +175,29 @@ EOT
      * @throws VersionDoesNotExist
      * @throws UnknownMigrationVersion
      */
-    private function mark(OutputInterface $output, string $version, bool $all = false) : void
+    private function mark(InputInterface $input, OutputInterface $output, string $version, bool $all = false): void
     {
         if (! $this->migrationRepository->hasVersion($version)) {
-            throw UnknownMigrationVersion::new($version);
+            if ((bool) $input->getOption('delete') === false) {
+                throw UnknownMigrationVersion::new($version);
+            }
+
+            $question =
+                'WARNING! You are about to delete a migration version from the version table that has no corresponding migration file.' .
+                'Do you want to delete this migration from the migrations table? (y/n)';
+
+            $confirmation = $this->askConfirmation($question, $input, $output);
+
+            if ($confirmation) {
+                $this->migrationRepository->removeMigrationVersionFromDatabase($version);
+
+                $output->writeln(sprintf(
+                    '<info>%s</info> deleted from the version table.',
+                    $version
+                ));
+
+                return;
+            }
         }
 
         $version = $this->migrationRepository->getVersion($version);

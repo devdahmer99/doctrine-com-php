@@ -9,6 +9,7 @@ use Doctrine\Migrations\Version\Version;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+
 use function assert;
 use function count;
 use function is_string;
@@ -23,10 +24,12 @@ use function strlen;
  */
 class StatusCommand extends AbstractCommand
 {
-    protected function configure() : void
+    /** @var string */
+    protected static $defaultName = 'migrations:status';
+
+    protected function configure(): void
     {
         $this
-            ->setName('migrations:status')
             ->setAliases(['status'])
             ->setDescription('View the status of a set of migrations.')
             ->addOption(
@@ -49,7 +52,7 @@ EOT
         parent::configure();
     }
 
-    public function execute(InputInterface $input, OutputInterface $output) : ?int
+    public function execute(InputInterface $input, OutputInterface $output): ?int
     {
         $output->writeln("\n <info>==</info> Configuration\n");
 
@@ -105,7 +108,7 @@ EOT
         return 0;
     }
 
-    private function writeStatusInfosLineAligned(OutputInterface $output, string $title, ?string $value) : void
+    private function writeStatusInfosLineAligned(OutputInterface $output, string $title, ?string $value): void
     {
         $output->writeln(sprintf(
             '    <comment>>></comment> %s: %s%s',
@@ -121,7 +124,7 @@ EOT
     private function showVersions(
         array $versions,
         OutputInterface $output
-    ) : void {
+    ): void {
         foreach ($versions as $version) {
             $executedAt = $version->getExecutedAt();
 

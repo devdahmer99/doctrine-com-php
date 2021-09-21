@@ -6,6 +6,7 @@ namespace Doctrine\Migrations\Tools\Console\Command;
 
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+
 use function sprintf;
 
 /**
@@ -14,12 +15,14 @@ use function sprintf;
  */
 class RollupCommand extends AbstractCommand
 {
-    protected function configure() : void
+    /** @var string */
+    protected static $defaultName = 'migrations:rollup';
+
+    protected function configure(): void
     {
         parent::configure();
 
         $this
-            ->setName('migrations:rollup')
             ->setAliases(['rollup'])
             ->setDescription('Rollup migrations by deleting all tracked versions and insert the one version that exists.')
             ->setHelp(<<<EOT
@@ -36,7 +39,7 @@ EOT
     public function execute(
         InputInterface $input,
         OutputInterface $output
-    ) : ?int {
+    ): ?int {
         $version = $this->dependencyFactory
             ->getRollup()->rollup();
 

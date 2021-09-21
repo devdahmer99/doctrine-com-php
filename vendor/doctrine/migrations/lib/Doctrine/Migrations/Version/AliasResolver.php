@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\Migrations\Version;
 
 use Doctrine\Migrations\MigrationRepository;
+
 use function substr;
 
 /**
@@ -41,7 +42,7 @@ final class AliasResolver
      *
      * If an existing version number is specified, it is returned verbatimly.
      */
-    public function resolveVersionAlias(string $alias) : ?string
+    public function resolveVersionAlias(string $alias): ?string
     {
         if ($this->migrationRepository->hasVersion($alias)) {
             return $alias;

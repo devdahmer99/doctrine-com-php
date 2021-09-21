@@ -7,6 +7,7 @@ namespace Doctrine\Migrations\Generator;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\Migrations\Configuration\Configuration;
 use SqlFormatter;
+
 use function array_unshift;
 use function count;
 use function implode;
@@ -39,8 +40,9 @@ class SqlGenerator
     public function generate(
         array $sql,
         bool $formatted = false,
-        int $lineLength = 120
-    ) : string {
+        int $lineLength = 120,
+        bool $checkDbPlatform = true
+    ): string {
         $code = [];
 
         foreach ($sql as $query) {
@@ -59,7 +61,7 @@ class SqlGenerator
             $code[] = sprintf('$this->addSql(%s);', var_export($query, true));
         }
 
-        if (count($code) !== 0) {
+        if (count($code) !== 0 && $checkDbPlatform && $this->configuration->isDatabasePlatformChecked()) {
             $currentPlatform = $this->platform->getName();
 
             array_unshift(

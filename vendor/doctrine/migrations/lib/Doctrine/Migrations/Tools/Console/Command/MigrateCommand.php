@@ -11,8 +11,11 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+
+use function assert;
 use function count;
 use function getcwd;
+use function is_string;
 use function sprintf;
 use function substr;
 
@@ -22,10 +25,12 @@ use function substr;
  */
 class MigrateCommand extends AbstractCommand
 {
-    protected function configure() : void
+    /** @var string */
+    protected static $defaultName = 'migrations:migrate';
+
+    protected function configure(): void
     {
         $this
-            ->setName('migrations:migrate')
             ->setAliases(['migrate'])
             ->setDescription(
                 'Execute a migration to a specified version or the latest available version.'
@@ -59,7 +64,7 @@ class MigrateCommand extends AbstractCommand
                 'allow-no-migration',
                 null,
                 InputOption::VALUE_NONE,
-                'Don\'t throw an exception if no migration is available (CI).'
+                'Do not throw an exception if no migration is available.'
             )
             ->addOption(
                 'all-or-nothing',
@@ -109,11 +114,12 @@ EOT
         parent::configure();
     }
 
-    public function execute(InputInterface $input, OutputInterface $output) : ?int
+    public function execute(InputInterface $input, OutputInterface $output): ?int
     {
         $this->outputHeader($output);
 
-        $version          = (string) $input->getArgument('version');
+        $version = $input->getArgument('version');
+        assert(is_string($version));
         $path             = $input->getOption('write-sql');
         $allowNoMigration = (bool) $input->getOption('allow-no-migration');
         $timeAllQueries   = (bool) $input->getOption('query-time');
@@ -140,6 +146,7 @@ EOT
         if ($path !== false) {
             $path = $path ?? getcwd();
 
+            assert(is_string($path));
             $migrator->writeSqlFile($path, $version);
 
             return 0;
@@ -164,7 +171,7 @@ EOT
         return 0;
     }
 
-    protected function createMigrator() : Migrator
+    protected function createMigrator(): Migrator
     {
         return $this->dependencyFactory->getMigrator();
     }
@@ -172,7 +179,7 @@ EOT
     private function checkExecutedUnavailableMigrations(
         InputInterface $input,
         OutputInterface $output
-    ) : int {
+    ): int {
         $executedUnavailableMigrations = $this->migrationRepository->getExecutedUnavailableMigrations();
 
         if (count($executedUnavailableMigrations) !== 0) {
@@ -204,7 +211,7 @@ EOT
     private function getVersionNameFromAlias(
         string $versionAlias,
         OutputInterface $output
-    ) : string {
+    ): string {
         $version = $this->configuration->resolveVersionAlias($versionAlias);
 
         if ($version !== null) {
@@ -240,7 +247,7 @@ EOT
     /**
      * @param mixed $allOrNothing
      */
-    private function getAllOrNothing($allOrNothing) : bool
+    private function getAllOrNothing($allOrNothing): bool
     {
         if ($allOrNothing !== false) {
             return $allOrNothing !== null

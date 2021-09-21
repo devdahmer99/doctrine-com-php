@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Doctrine\Migrations\Version;
 
 use Doctrine\Migrations\Configuration\Configuration;
-use Doctrine\Migrations\internal;
 
 /**
  * The Factory class is responsible for creating instances of the Version class for a version number
  * and a migration class name.
  *
- * @var internal
+ * @internal
  */
 class Factory
 {
@@ -27,7 +26,7 @@ class Factory
         $this->versionExecutor = $versionExecutor;
     }
 
-    public function createVersion(string $version, string $migrationClassName) : Version
+    public function createVersion(string $version, string $migrationClassName): Version
     {
         return new Version(
             $this->configuration,
