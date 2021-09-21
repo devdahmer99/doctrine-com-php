@@ -1,0 +1,11 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "Local",
+            "database": "${workspaceFolder:doctrine-com-php}/var/data/banco.sqlite"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}
